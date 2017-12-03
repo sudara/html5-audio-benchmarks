@@ -2,25 +2,96 @@
 <head>
   <meta charset="UTF-8">
   <title>HTML5 audio benchmarks</title>
+  <style type="text/css">
+    p{
+      line-height:1.3em;
+      margin:0;
+    }
+  </style>
   <script src="https://code.jquery.com/jquery-3.2.1.min.js"   integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="   crossorigin="anonymous"></script>
-
-  <script>
-    $(function() {
-      var output = $('.output')
-      output.append('')
-    });
-  </script>
-
-
 </head>
 <body>
 
-
-<h1>HTML 5 Audio Benchmarks</h1>
-
-<div class="output">
-Loading...
+<h1>HTML5 Audio Benchmarks</h1>
+<a id="button" href="#">Play</a>
+<div id="output">
+<p>Loading...<p>
 </div>
+
+<script type="text/javascript">
+  window.output = $('#output')
+  window.start = performance.now()
+  window.tracks = ['1min128kbps','1min256kbps','3min128kbps','3min256kbps','10min128kbps','10min256kbps']
+  window.numberOfIterations = 5
+
+  $(function() {
+    log("dom ready")
+    $('#button').on('click',function(){
+      play(0);
+    })
+    doTest()
+  });
+
+  function doTest(){
+    setupSoundManager(false)
+  }
+
+  function relativeTime(){
+    return Math.round(performance.now() - window.start)
+  }
+
+  function log(msg){
+    window.output.append("<p>" + relativeTime() + "ms: " + msg + "</p>")
+  }
+
+  function play(track){
+    log("play")
+    window.startPlay = performance.now()
+    soundManager.play("sound" + window.tracks[track])
+  }
+
+  function playNext(soundID){
+    var current = window.tracks.indexOf(soundID.replace('sound',''))
+    var next = window.tracks[current + 1]
+    if(next != undefined)
+      play(current + 1)
+  }
+
+  function logPlayTime(name){
+    log("<b>" + name + "</b>" + " play took " + Math.round(performance.now() - window.startPlay) + 'ms')
+  }
+
+  function setupSoundManager(preferFlash){
+    $.getScript("scripts/soundmanager2-2.97a.20170601.min.js", function(){
+      log("soundmanager loaded")
+      soundManager.setup({
+        url: '/scripts/',
+        flashVersion: 9, // optional: shiny features (default = 8)
+        // optional: ignore Flash where possible, use 100% HTML5 mode
+        preferFlash: false,
+        onready: function() {
+          log("soundmanager ready")
+          for (i = 0; i < window.tracks.length; i++) {
+            soundManager.createSound({
+              id: 'sound' + window.tracks[i],
+              url: 'mp3/' + window.tracks[i] + '.mp3?' + Math.random().toString(36).substring(7),
+              whileplaying: function(){
+                log(JSON.stringify(this.buffered))
+                logPlayTime(this.id.replace('sound',''))
+                this.stop()
+                this.unload()
+                playNext(this.id)
+              }
+            })
+            log('sound ' + window.tracks[i] + ' created')
+          }
+        }
+      })
+    })
+  }
+
+
+</script>
 
 </body>
 </html>
