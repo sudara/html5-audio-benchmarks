@@ -9,6 +9,7 @@
     }
   </style>
   <script src="https://code.jquery.com/jquery-3.2.1.min.js"   integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="   crossorigin="anonymous"></script>
+  <script src="scripts/soundmanager2-2.97a.20170601.min.js"></script>
 </head>
 <body>
 
@@ -62,36 +63,33 @@
   }
 
   function setupSoundManager(preferFlash){
-    $.getScript("scripts/soundmanager2-2.97a.20170601.min.js", function(){
-      log("soundmanager loaded")
-      soundManager.setup({
-        url: '/scripts/',
-        flashVersion: 9, // optional: shiny features (default = 8)
-        // optional: ignore Flash where possible, use 100% HTML5 mode
-        useHTML5Audio: true,
-        preferFlash: true,
-        onready: function() {
-          log("soundmanager ready")
-          for (i = 0; i < window.tracks.length; i++) {
-            soundManager.createSound({
-              id: 'sound' + window.tracks[i],
-              url: 'mp3/' + window.tracks[i] + '.mp3?' + Math.random().toString(36).substring(7),
-              whileplaying: function(){
-                amountBuffered = ((this.buffered[0]["end"] - this.buffered[0]["start"]) / 1000)
-                if(this.isHTML5)
-                  log("HTML5 audio buffered seconds: " + amountBuffered)
-                else
-                  log("FLASH buffered seconds: " + amountBuffered)
-                logPlayTime(this.id.replace('sound',''))
-                this.stop()
-                this.unload()
-                playNext(this.id)
-              }
-            })
-            log(window.tracks[i] + ' created')
-          }
+    soundManager.setup({
+      url: '/scripts/',
+      flashVersion: 9, // optional: shiny features (default = 8)
+      // optional: ignore Flash where possible, use 100% HTML5 mode
+      useHTML5Audio: true,
+      preferFlash: true,
+      onready: function() {
+        log("soundmanager ready")
+        for (i = 0; i < window.tracks.length; i++) {
+          soundManager.createSound({
+            id: 'sound' + window.tracks[i],
+            url: 'mp3/' + window.tracks[i] + '.mp3?' + Math.random().toString(36).substring(7),
+            whileplaying: function(){
+              amountBuffered = ((this.buffered[0]["end"] - this.buffered[0]["start"]) / 1000)
+              if(this.isHTML5)
+                log("HTML5 audio buffered seconds: " + amountBuffered)
+              else
+                log("FLASH buffered seconds: " + amountBuffered)
+              logPlayTime(this.id.replace('sound',''))
+              this.stop()
+              this.unload()
+              playNext(this.id)
+            }
+          })
+          log(window.tracks[i] + ' created')
         }
-      })
+      }
     })
   }
 
