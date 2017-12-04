@@ -40,7 +40,8 @@
 
   function doTest(){
     setupHowls()
-    //setupSoundManager(false)
+    window.playing = 0
+    setupSoundManager(false)
   }
 
   function relativeTime(){
@@ -79,7 +80,7 @@
           logPlayTime(window.tracks[window.playing])
           window.howls[window.playing].stop()
           window.playing += 1
-          window.howls[window.playing].play()
+          play()
         }
       }))
       log(window.tracks[i] + ' created')
