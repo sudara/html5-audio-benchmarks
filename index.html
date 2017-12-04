@@ -133,9 +133,10 @@ Number of iterations <input id="iterations" value="5" type="text" size="2"/>
   function playNext(){
     Test.currentlyPlaying += 1
     var next = Test.currentTracks[Test.currentlyPlaying]
-    if(next != undefined)
+    if(next != undefined){
+      Test.currentInstances[Test.currentlyPlaying-1].unload()
       play(Test.currentlyPlaying)
-    else
+    }else
       Test.displayResults() // otherwise chain just stops
   }
 
@@ -179,7 +180,6 @@ Number of iterations <input id="iterations" value="5" type="text" size="2"/>
           //   log("FLASH buffered seconds: " + amountBuffered)
           Test.logPlayTime('SM2/whileplaying', this.id.replace('sound',''))
           this.stop()
-          this.unload()
           playNext()
         }
       })
