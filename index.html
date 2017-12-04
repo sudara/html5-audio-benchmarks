@@ -20,8 +20,9 @@
 <body>
 
 <h1>HTML5 Audio Benchmarks</h1>
-Number of iterations <input id="iterations" value="1" type="text" size="2"/>
-<h2><a id="button" href="#">Profile SM2 and Howl</a></h2>
+Number of iterations <input id="iterations" value="5" type="text" size="2"/>
+<h2><a id="sm2" href="#">Profile SM2</a> <a id="howl" href="#">Profile Howl</a></h2>
+<pre id="results"></pre>
 <div id="output">
 <p>Loading...<p>
 </div>
@@ -83,7 +84,7 @@ Number of iterations <input id="iterations" value="1" type="text" size="2"/>
       this.results[name][type].push(ms)
     },
     displayResults:function(){
-
+      $('#results').html(JSON.stringify(this.results,undefined, 2))
     }
   }
 
@@ -97,20 +98,29 @@ Number of iterations <input id="iterations" value="1" type="text" size="2"/>
     // $(document).on('canplay'), function(){
     //   alert()
     // }
-    setupTest()
-    $('#button').on('click',function(){
-      play(0)
+    $('#sm2').on('click',function(){
+      runSM2()
     })
+    $('#howl').on('click',function(){
+      runHowl()
+    })
+
+
   });
 
-  function setupTest(){
-    Test.currentTracks = Tracks.linode()
-    //Test.currentInstances = setupHowlInstances()
-
+  function runSM2(){
+    Test.currentlyPlaying = 0 // reset index
     Test.currentInstances = setupSoundManagerInstances(false)
     log(Test.currentInstances.length + " SMSounds ready to run")
-    Test.currentlyPlaying = 0 // reset index
-    console.log(Test.results)
+    play(0)
+  }
+
+  function runHowl(){
+    Test.currentTracks = Tracks.linode()
+
+    Test.currentInstances = setupHowlInstances()
+    log(Test.currentInstances.length + " Howls ready to run")
+    play(0)
   }
 
   function play(trackIndex){
@@ -123,23 +133,24 @@ Number of iterations <input id="iterations" value="1" type="text" size="2"/>
     Test.currentlyPlaying += 1
     var next = Test.currentTracks[Test.currentlyPlaying]
     if(next != undefined)
-      play(Test.currentlyPlaying) // otherwise chain just stops
+      play(Test.currentlyPlaying)
+    else
+      Test.displayResults() // otherwise chain just stops
   }
 
   function setupHowlInstances(){
-    Test.currentTracks.each(function(){
+    return Test.currentTracks.map(trackURL =>
       new Howl({
-        src: Test.currentTracks[i],
+        src: trackURL,
         html5: true,
         preload: false,
         onplay:function(){
-          logPlayTime(Test.currentTracks[Test.currentlyPlaying])
-          Test.howls[Test.currentlyPlaying].stop()
+          Test.logPlayTime('HOWL/onplay', Test.currentTracks[Test.currentlyPlaying])
+          Test.currentInstances[Test.currentlyPlaying].stop()
           playNext()
         }
       })
-      log(window.tracks[i] + ' created')
-    })
+    )
   }
 
   function setupSoundManagerInstances(preferFlash){
@@ -157,7 +168,7 @@ Number of iterations <input id="iterations" value="1" type="text" size="2"/>
         id: 'sound' + trackURL,
         url: trackURL,
         onload: function(){
-          Test.logPlayTime('onload', this.id.replace('sound',''))
+          Test.logPlayTime('SM2/onload', this.id.replace('sound',''))
         },
         whileplaying: function(){
           amountBuffered = Math.round((this.buffered[0]["end"] - this.buffered[0]["start"]) / 1000)
@@ -165,7 +176,7 @@ Number of iterations <input id="iterations" value="1" type="text" size="2"/>
             log("HTML5 audio buffered seconds: " + amountBuffered)
           else
             log("FLASH buffered seconds: " + amountBuffered)
-          Test.logPlayTime('whileplaying', this.id.replace('sound',''))
+          Test.logPlayTime('SM2/whileplaying', this.id.replace('sound',''))
           this.stop()
           this.unload()
           playNext()
