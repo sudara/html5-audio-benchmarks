@@ -7,6 +7,10 @@
       line-height:1.3em;
       margin:0;
     }
+    textarea{
+      width:600px;
+      min-height:80%;
+    }
   </style>
   <script src="https://code.jquery.com/jquery-3.2.1.min.js"   integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="   crossorigin="anonymous"></script>
   <script src="scripts/soundmanager2-2.97a.20170601.min.js"></script>
@@ -16,7 +20,8 @@
 <body>
 
 <h1>HTML5 Audio Benchmarks</h1>
-<h2><a id="button" href="#">Click Me</a></h2>
+Number of iterations <input id="iterations" value="1" type="text" size="2"/>
+<h2><a id="button" href="#">Profile SM2 and Howl</a></h2>
 <div id="output">
 <p>Loading...<p>
 </div>
@@ -35,7 +40,11 @@
   Tracks = {
     base: ['1min128kbps','1min256kbps','3min128kbps','3min256kbps','10min128kbps','10min256kbps'],
     linode:function(){
-      return this.base.map(track => 'mp3/' + track + '.mp3?' + this.cacheBuster())
+      var tracks = []
+      for(i=0; i < Test.numberOfIterations(); i++){
+        tracks = tracks.concat(this.base.map(track => 'mp3/' + track + '.mp3?' + this.cacheBuster()))
+      }
+      return tracks
     },
     cacheBuster:function(){
       return Math.random().toString(36).substring(7)
@@ -47,11 +56,15 @@
     output: $('#output'),
     started: performance.now(),
     startedPlay: 0,
-    numberOfIterations: 5,
     howls: [],
+    SMSounds: [],
     currentlyPlaying: 0,
     currentTracks: [],
-    results: [],
+    currentInstances: [],
+    results: {},
+    numberOfIterations: function(){
+      return Number($('#iterations').val())
+    },
     log: function(msg){
       this.output.append("<p>" + this.relativeTime() + "ms: " + msg + "</p>")
     },
@@ -62,7 +75,15 @@
       return Math.round(performance.now() - this.started)
     },
     logPlayTime: function(type, name){
-      log("<b>" + name + "</b> " + type + " took " + Math.round(performance.now() - this.startedPlay) + 'ms')
+      name = name.split('/').pop(-1).split('.')[0] // normalize
+      ms = Math.round(performance.now() - this.startedPlay)
+      log("<b>" + name + "</b> " + type + " took " + ms + 'ms')
+      this.results[name] = this.results[name] || {}
+      this.results[name][type] = this.results[name][type] || []
+      this.results[name][type].push(ms)
+    },
+    displayResults:function(){
+
     }
   }
 
@@ -73,55 +94,55 @@
 
   $(function() {
     log("dom ready")
-    $(document).on('canplay'), function(){
-      alert()
-    }
+    // $(document).on('canplay'), function(){
+    //   alert()
+    // }
+    setupTest()
     $('#button').on('click',function(){
       play(0)
     })
-    doTest()
   });
 
-  function doTest(){
-    //setupHowls()
-    //window.playing = 0 // reset index
+  function setupTest(){
     Test.currentTracks = Tracks.linode()
-    console.log(Test.currentTracks)
-    setupSoundManager(false)
+    //Test.currentInstances = setupHowlInstances()
+
+    Test.currentInstances = setupSoundManagerInstances(false)
+    log(Test.currentInstances.length + " SMSounds ready to run")
+    Test.currentlyPlaying = 0 // reset index
+    console.log(Test.results)
   }
 
-  function play(track){
+  function play(trackIndex){
     log("start play")
     Test.startedPlay = performance.now()
-    //Test.howls[Test.currentlyPlaying].play()
-    soundManager.play("sound" + Test.currentTracks[track])
+    Test.currentInstances[trackIndex].play()
   }
 
-  function playNext(soundID){
-    var current = Test.currentTracks.indexOf(soundID.replace('sound',''))
-    var next = Test.currentTracks[current + 1]
+  function playNext(){
+    Test.currentlyPlaying += 1
+    var next = Test.currentTracks[Test.currentlyPlaying]
     if(next != undefined)
-      play(current + 1)
+      play(Test.currentlyPlaying) // otherwise chain just stops
   }
 
-  function setupHowls(){
-    for (i = 0; i < window.tracks.length; i++) {
-      window.howls.push(new Howl({
-        src: ['mp3/' + window.tracks[i] + '.mp3?' + Math.random().toString(36).substring(7)],
+  function setupHowlInstances(){
+    Test.currentTracks.each(function(){
+      new Howl({
+        src: Test.currentTracks[i],
         html5: true,
         preload: false,
         onplay:function(){
-          logPlayTime(window.tracks[window.playing])
-          window.howls[window.playing].stop()
-          window.playing += 1
-          play()
+          logPlayTime(Test.currentTracks[Test.currentlyPlaying])
+          Test.howls[Test.currentlyPlaying].stop()
+          playNext()
         }
-      }))
+      })
       log(window.tracks[i] + ' created')
-    }
+    })
   }
 
-  function setupSoundManager(preferFlash){
+  function setupSoundManagerInstances(preferFlash){
     soundManager.setup({
       url: '/scripts/',
       flashVersion: 9, // optional: shiny features (default = 8)
@@ -129,29 +150,28 @@
       useHTML5Audio: true,
       onready: function() {
         log("soundmanager ready")
-        for (i = 0; i < Test.currentTracks.length; i++) {
-          soundManager.createSound({
-            id: 'sound' + Test.currentTracks[i],
-            url: Test.currentTracks[i],
-            onload: function(){
-              Test.logPlayTime('onload', this.id.replace('sound',''))
-            },
-            whileplaying: function(){
-              amountBuffered = Math.round((this.buffered[0]["end"] - this.buffered[0]["start"]) / 1000)
-              if(this.isHTML5)
-                log("HTML5 audio buffered seconds: " + amountBuffered)
-              else
-                log("FLASH buffered seconds: " + amountBuffered)
-              Test.logPlayTime('whileplaying', this.id.replace('sound',''))
-              this.stop()
-              this.unload()
-              playNext(this.id)
-            }
-          })
-          log(Test.currentTracks[i] + ' created')
-        }
       }
     })
+    return Test.currentTracks.map(trackURL =>
+      soundManager.createSound({
+        id: 'sound' + trackURL,
+        url: trackURL,
+        onload: function(){
+          Test.logPlayTime('onload', this.id.replace('sound',''))
+        },
+        whileplaying: function(){
+          amountBuffered = Math.round((this.buffered[0]["end"] - this.buffered[0]["start"]) / 1000)
+          if(this.isHTML5)
+            log("HTML5 audio buffered seconds: " + amountBuffered)
+          else
+            log("FLASH buffered seconds: " + amountBuffered)
+          Test.logPlayTime('whileplaying', this.id.replace('sound',''))
+          this.stop()
+          this.unload()
+          playNext()
+        }
+      })
+    )
   }
 
 
