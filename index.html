@@ -109,6 +109,7 @@ Number of iterations <input id="iterations" value="5" type="text" size="2"/>
   });
 
   function runSM2(){
+    Test.currentTracks = Tracks.linode()
     Test.currentlyPlaying = 0 // reset index
     Test.currentInstances = setupSoundManagerInstances(false)
     log(Test.currentInstances.length + " SMSounds ready to run")
@@ -117,7 +118,7 @@ Number of iterations <input id="iterations" value="5" type="text" size="2"/>
 
   function runHowl(){
     Test.currentTracks = Tracks.linode()
-
+    Test.currentlyPlaying = 0 // reset index
     Test.currentInstances = setupHowlInstances()
     log(Test.currentInstances.length + " Howls ready to run")
     play(0)
