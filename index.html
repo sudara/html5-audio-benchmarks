@@ -10,6 +10,8 @@
   </style>
   <script src="https://code.jquery.com/jquery-3.2.1.min.js"   integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="   crossorigin="anonymous"></script>
   <script src="scripts/soundmanager2-2.97a.20170601.min.js"></script>
+  <script src="scripts/howler-2.0.5.min.js"></script>
+
 </head>
 <body>
 
@@ -24,6 +26,9 @@
   window.start = performance.now()
   window.tracks = ['1min128kbps','1min256kbps','3min128kbps','3min256kbps','10min128kbps','10min256kbps']
   window.numberOfIterations = 5
+  window.howls = []
+  window.playing = 0
+
 
   $(function() {
     log("dom ready")
@@ -34,7 +39,8 @@
   });
 
   function doTest(){
-    setupSoundManager(false)
+    setupHowls()
+    //setupSoundManager(false)
   }
 
   function relativeTime(){
@@ -48,7 +54,8 @@
   function play(track){
     log("start play")
     window.startPlay = performance.now()
-    soundManager.play("sound" + window.tracks[track])
+    window.howls[window.playing].play()
+    //soundManager.play("sound" + window.tracks[track])
   }
 
   function playNext(soundID){
@@ -62,13 +69,30 @@
     log("<b>" + name + "</b>" + " play took " + Math.round(performance.now() - window.startPlay) + 'ms')
   }
 
+  function setupHowls(){
+    for (i = 0; i < window.tracks.length; i++) {
+      window.howls.push(new Howl({
+        src: ['mp3/' + window.tracks[i] + '.mp3?' + Math.random().toString(36).substring(7)],
+        html5: true,
+        preload: false,
+        onplay:function(){
+          logPlayTime(window.tracks[window.playing])
+          window.howls[window.playing].stop()
+          window.playing += 1
+          window.howls[window.playing].play()
+        }
+      }))
+      log(window.tracks[i] + ' created')
+    }
+  }
+
   function setupSoundManager(preferFlash){
     soundManager.setup({
       url: '/scripts/',
       flashVersion: 9, // optional: shiny features (default = 8)
       // optional: ignore Flash where possible, use 100% HTML5 mode
       useHTML5Audio: true,
-      preferFlash: true,
+      preferFlash: false,
       onready: function() {
         log("soundmanager ready")
         for (i = 0; i < window.tracks.length; i++) {
