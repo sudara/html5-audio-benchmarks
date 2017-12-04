@@ -172,11 +172,11 @@ Number of iterations <input id="iterations" value="5" type="text" size="2"/>
           Test.logPlayTime('SM2/onload', this.id.replace('sound',''))
         },
         whileplaying: function(){
-          amountBuffered = Math.round((this.buffered[0]["end"] - this.buffered[0]["start"]) / 1000)
-          if(this.isHTML5)
-            log("HTML5 audio buffered seconds: " + amountBuffered)
-          else
-            log("FLASH buffered seconds: " + amountBuffered)
+          // amountBuffered = Math.round((this.buffered[0]["end"] - this.buffered[0]["start"]) / 1000)
+          // if(this.isHTML5)
+          //   log("HTML5 audio buffered seconds: " + amountBuffered)
+          // else
+          //   log("FLASH buffered seconds: " + amountBuffered)
           Test.logPlayTime('SM2/whileplaying', this.id.replace('sound',''))
           this.stop()
           this.unload()
